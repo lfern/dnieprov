@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+X-COMMENT: Main-Class will be added automatically by build
+Specification-Title: DNIe Provider
+Specification-Version: 1.2
+Specification-Vendor: Luis Fernando Pardo - lfern70@gmail.com
+Implementation-Title: DNIe Provider
+Implementation-Version: 1.2-rc
+Implementation-Vendor: Luis Fernando Pardo - lfern70@gmail.com

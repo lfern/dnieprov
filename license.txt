@@ -1,0 +1,51 @@
+La librería Dnieprov se librea bajo licencia dual LGPL v3.0 + EUPL v1.1, es decir:
+ - GNU Lesser General Public License (LGPL), version 3.0
+ - European Union Public Licence (EUPL), version 1.1
+
+ofreciéndole la posibilidad de acogerse a la licencia con la que se sienta más 
+comodo trabajar, siempre que se cumplan las condiciones que cada una impone.
+
+Si se decide por la licencia LGPL, se aplica el siguiente aviso:
+ 
+  -----------------------------------------------------------------------------
+   This program is free software: you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public License
+   as published by the Free Software Foundation, either version 3
+   of the License, or (at your option) any later version.   
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.  
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see http://www.gnu.org/licenses/
+  -----------------------------------------------------------------------------
+
+Si se decide por la licencia EUPL se aplica este otro:
+  -----------------------------------------------------------------------------
+   Licencia con arreglo a la EUPL, Versión 1.1 exclusivamente (la "Licencia");
+   Solo podrá usarse esta obra su se respeta la Licencia.
+   Puede obtenerse una copia de la Licencia en:
+
+   http://ec.europa.eu/idabc/eupl 
+
+   El programa distribuido con arreglo a la Licencia se distribuye "TAL CUAL",
+   SIN GARANTÍAS NI CONDICIONES DE NINGÚN TIPO, ni expresas ni implícitas.
+  -----------------------------------------------------------------------------
+
+Cabe señalar que esta librería hace uso de porciones de código fuente
+provenientes de:
+
+ - Bouncy Castle, http://www.bouncycastle.org
+ - snmp for spring, http://spring-snmp.sourceforge.net
+
+Concretamente de Bouncy Castle se ha utilizado la implementación de los 
+algoritmos criptográficos SHA1, SHA256, SHA384 y SHA512. La licencia 
+correspondiente a este código puede obtenerse en 
+http://www.bouncycastle.org/licence.html
+
+En cuanto a "snmp for spring" se han utilizado las clases ubicadas en el paquete
+org.dnieprov.driver.utils.bertlv . Esta librería se distribuye bajo licencia 
+Apache License, Version 2.0, cuya copia puede descargarse de 
+http://www.apache.org/licenses/LICENSE-2.0 . 
