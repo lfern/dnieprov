@@ -1,1 +1,11 @@
-TESTING GIT 2
+Esta librería de Java proporciona un driver y un Provider integrado con la JCA (Java Cryptography Architecture) que proporciona:
+
+ - Acceso a Almacén de Claves con alias, certificados y de claves privadas (sólo se implementan las funcionalidades de lectura).
+ - Firma electrónica implementando los siguientes algoritmos: SHA1withRSA, SHA-256withRSA (o SHA256withRSA) , SHA-384withRSA (o SHA384withRSA ) y SHA-512withRSA (o SHA512withRSA).
+
+
+TODO:
+
+ - Detección de inserción de la tarjeta.
+ - Soporte para sesiones.
+
