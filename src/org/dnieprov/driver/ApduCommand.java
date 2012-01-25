@@ -26,9 +26,9 @@
  * Si se decide por la licencia EUPL se aplica este otro:
  * 
  *   Licencia con arreglo a la EUPL, Versión 1.1 exclusivamente (la "Licencia");
- *   Solo podrá usarse esta obra su se respeta la Licencia.
+ *   Solo podrá usarse esta obra si se respeta la Licencia.
  *   Puede obtenerse una copia de la Licencia en:
- *   http://ec.europa.eu/idabc/eupl 
+ *   http://ec.europa.eu/idabc/eupl.html
  *   El programa distribuido con arreglo a la Licencia se distribuye "TAL CUAL",
  *   SIN GARANTÍAS NI CONDICIONES DE NINGÚN TIPO, ni expresas ni implícitas.
  * ----------------------------------------------------------------------* 
