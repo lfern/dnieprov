@@ -1,5 +1,6 @@
-Esta librería de Java proporciona un driver y un Provider integrado con la JCA (Java Cryptography Architecture) que proporciona:
+Esta librería de Java proporciona un driver en Java para el DNIe y un Provider integrado con la JCA (Java Cryptography Architecture) que permite:
 
+ - Conexión con el DNIe con comandos APDU.
  - Acceso a Almacén de Claves con alias, certificados y de claves privadas (sólo se implementan las funcionalidades de lectura).
  - Firma electrónica implementando los siguientes algoritmos: SHA1withRSA, SHA-256withRSA (o SHA256withRSA) , SHA-384withRSA (o SHA384withRSA ) y SHA-512withRSA (o SHA512withRSA).
 
