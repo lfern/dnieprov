@@ -55,6 +55,7 @@ import org.dnieprov.driver.DnieDriver;
 import org.dnieprov.driver.DniePrivateKey;
 import org.dnieprov.driver.exceptions.DnieDriverException;
 import org.dnieprov.driver.exceptions.DnieDriverPinException;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 
 /**
  * Implementation of signature engine for DNIe.
@@ -151,6 +152,8 @@ public class DnieSignature extends SignatureSpi {
         } catch (NoSuchAlgorithmException ex){
             throw new SignatureException(ex);
         } catch (DnieDriverPinException ex){
+            throw new SignatureException(ex);
+        } catch (InvalidCardException ex){
             throw new SignatureException(ex);
         }
     }

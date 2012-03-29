@@ -45,6 +45,7 @@ import java.util.Iterator;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 
 /**
  * Contents info for a DNIe card.
@@ -73,9 +74,18 @@ final class DnieCardImpl {
         this.cardChannel = cardChannel;
         sessions = new Hashtable();
     }
+    
+    private void checkValid() throws InvalidCardException{
+        if (!valid){
+            throw new InvalidCardException("This card object is no longer valid");
+        }
+    }
 
-    public byte[] getCardId(){
-        return Arrays.copyOf(cardId, cardId.length);
+    public byte[] getCardId() throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            return Arrays.copyOf(cardId, cardId.length);
+        }
     }
 
     public CardTerminal getCardTerminal(){
@@ -111,22 +121,27 @@ final class DnieCardImpl {
     public boolean isVerified(DnieSession ses){
         return sessions.get(ses).booleanValue();
     }
-    public DnieSecureChannel getSecureChannel(){
-        return secureChannel;
+    public DnieSecureChannel getSecureChannel() throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            return secureChannel;
+        }
     }
     
     public void invalidate(){
-        valid = false;
-        p15List.clear();
-        certList.clear();
-        subjects.clear();
-        if (cardId != null)
-            Arrays.fill(cardId,(byte) 0x00);
-        try{
-            if (secureChannel != null)
-                secureChannel.close();
-        } catch (CardException ex){
-            
+        synchronized (this) {
+            valid = false;
+            p15List.clear();
+            certList.clear();
+            subjects.clear();
+            if (cardId != null)
+                Arrays.fill(cardId,(byte) 0x00);
+            try{
+                if (secureChannel != null)
+                    secureChannel.close();
+            } catch (CardException ex){
+
+            }
         }
     }
          
@@ -134,39 +149,59 @@ final class DnieCardImpl {
         return valid;
     }
     
-    public void addP15(DnieP15Record record){
-        p15List.put(record.getCkaId(),record);
+    public void addP15(DnieP15Record record) throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            p15List.put(record.getCkaId(),record);
+        }
     }
     
     public Iterator<DnieP15Record> getInfo(){
-        return p15List.values().iterator();
-    }
-    
-    public void addCertificate(String id,X509Certificate cert){
-        certList.put(cert,id);
-        subjects.add(cert.getSubjectDN().toString());
-    }
-    
-    public void removeCerts(){
-        certList.clear();
-    }
-    public boolean hasCerts(){
-        return (certList.size() > 0);
-    }
-    public DnieP15Record getInfo4Cert(X509Certificate cert){
-        String id = certList.get(cert);
-        if (id != null){
-            return p15List.get(id);
+        synchronized (this) {
+            return p15List.values().iterator();
         }
-        return null;
     }
-    public Enumeration<X509Certificate> getCerts(DnieSession session){
-        if (sessions.containsKey(session)){
-            if (sessions.get(session)){
-                return Collections.enumeration(certList.keySet());
+    
+    public void addCertificate(String id,X509Certificate cert) throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            certList.put(cert,id);
+            subjects.add(cert.getSubjectDN().toString());
+        }
+    }
+    
+    public void removeCerts() throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            certList.clear();
+        }
+    }
+    public boolean hasCerts() throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            return (certList.size() > 0);
+        }
+    }
+    public DnieP15Record getInfo4Cert(X509Certificate cert) throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            String id = certList.get(cert);
+            if (id != null){
+                return p15List.get(id);
             }
+            return null;
         }
-        return Collections.enumeration(Arrays.asList(new X509Certificate[0]));
+    }
+    public Enumeration<X509Certificate> getCerts(DnieSession session) throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            if (sessions.containsKey(session)){
+                if (sessions.get(session)){
+                    return Collections.enumeration(certList.keySet());
+                }
+            }
+            return Collections.enumeration(Arrays.asList(new X509Certificate[0]));
+        }
     }
     public boolean sessionIsVerified(DnieSession session){
         if (sessions.containsKey(session)){
@@ -174,7 +209,10 @@ final class DnieCardImpl {
         }
         return false;
     }
-    public boolean hasSubject(String subject){
-        return subjects.contains(subject);
+    public boolean hasSubject(String subject) throws InvalidCardException{
+        synchronized (this) {
+            checkValid();
+            return subjects.contains(subject);
+        }
     }
 }

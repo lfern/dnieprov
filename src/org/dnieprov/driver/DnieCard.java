@@ -36,6 +36,7 @@
 package org.dnieprov.driver;
 
 import java.util.Iterator;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 
 /**
  * Wrapper for DnieCardImpl (maybe this is not necesary)
@@ -70,7 +71,7 @@ public class DnieCard {
      * @param subject subject dn 
      * @return true if this card holds certificate with same subject dn
      */
-    public boolean hasSubject(String subject){
+    public boolean hasSubject(String subject) throws InvalidCardException{
         return cardImpl.hasSubject(subject);
     }
     /**

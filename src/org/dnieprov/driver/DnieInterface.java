@@ -67,6 +67,7 @@ import org.dnieprov.driver.exceptions.DnieSecureChannelNotEstablished;
 import org.dnieprov.driver.exceptions.DnieGettingCryptoProviderExcetion;
 import org.dnieprov.driver.exceptions.DnieSettingSecureChannelException;
 import org.dnieprov.driver.exceptions.DnieUnexpectedException;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 
 /**
  * DNIe interface API
@@ -235,7 +236,7 @@ final class DnieInterface {
         return true;
     }
     
-    public int authenticate(char[] password) throws CardException{
+    public int authenticate(char[] password) throws CardException,InvalidCardException{
         byte[] pass = new byte[password.length];
         for (int i = 0; i < password.length; i++) {
             pass[i] = (byte) password[i];
@@ -332,7 +333,7 @@ final class DnieInterface {
         }
     }
     public int  getCertificates(ParamReference signCert,ParamReference authCert) throws CardException,
-            DnieSecureChannelNotEstablished, DnieUnexpectedException{
+            DnieSecureChannelNotEstablished, DnieUnexpectedException,InvalidCardException{
         CardChannel secureChannel = card.getSecureChannel();
         DnieP15Decoder dec = null;
         byte[] result = null;
@@ -374,7 +375,7 @@ final class DnieInterface {
     }        
 
     public int sign(String keyId,byte[] asn1DigestInfo,byte digest[],ParamReference outSignature) throws CardException,
-            DnieSecureChannelNotEstablished,DnieKeyNotFoundException{
+            DnieSecureChannelNotEstablished,DnieKeyNotFoundException,InvalidCardException{
         CardChannel secureChannel = card.getSecureChannel();
         byte [] path = null;
         byte [] secData = {(byte)0x84,(byte)0x02,(byte)0x01,(byte)0x00};
@@ -426,7 +427,7 @@ final class DnieInterface {
             if (path != null) Arrays.fill(path,NULL_BYTE);
         }
      }
-    public int getPkcs15PrivateKeyInfo(ParamReference outPkcs15) throws CardException{
+    public int getPkcs15PrivateKeyInfo(ParamReference outPkcs15) throws CardException,InvalidCardException{
         SecureByteBuffer buffer = new SecureByteBuffer();
         CardChannel channel = card.getSecureChannel();
         if (channel == null){
@@ -488,7 +489,7 @@ final class DnieInterface {
         }
             
     }
-    public int getPkcs15CertificateInfo(ParamReference outPkcs15) throws CardException {
+    public int getPkcs15CertificateInfo(ParamReference outPkcs15) throws CardException ,InvalidCardException{
 
         ApduCommand acSelectFile = acSelectFileInstance();
         ApduCommand acgetBinary = acGetBinaryInstance();
@@ -558,7 +559,7 @@ final class DnieInterface {
         
     }
     
-    public int getCertificate(byte [] path,ParamReference param) throws CardException{
+    public int getCertificate(byte [] path,ParamReference param) throws CardException,InvalidCardException{
         byte[] result = null;
         SecureByteBuffer buffer = new SecureByteBuffer();
         CardChannel secureChannel = card.getSecureChannel();

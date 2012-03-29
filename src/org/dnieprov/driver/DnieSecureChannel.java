@@ -82,7 +82,10 @@ final class DnieSecureChannel extends CardChannel{
 
     @Override
     public void close() throws CardException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Arrays.fill(kenc,(byte)0x0);
+        Arrays.fill(kmac,(byte)0x0);
+        Arrays.fill(scc,(byte)0x0);
+        channel = null;
     }
 
     @Override

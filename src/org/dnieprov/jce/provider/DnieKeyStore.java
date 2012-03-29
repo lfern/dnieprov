@@ -58,6 +58,7 @@ import org.dnieprov.driver.DniePrivateKey;
 import org.dnieprov.driver.DnieSession;
 import org.dnieprov.driver.exceptions.DnieDriverException;
 import org.dnieprov.driver.exceptions.DnieDriverPinException;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 
 /**
  * Implementation of key store engine for DNIe.
@@ -78,7 +79,6 @@ public final class DnieKeyStore extends KeyStoreSpi {
     public DnieKeyStore(DnieDriver driver){
         this.driver = driver;
     }
-    
 
     @Override
     public Key engineGetKey(String alias, char[] password) throws NoSuchAlgorithmException, UnrecoverableKeyException {
@@ -103,6 +103,8 @@ public final class DnieKeyStore extends KeyStoreSpi {
             /** TODO: try to establish new session: card insertion/removal */
         } catch (DnieDriverPinException ex){
             /** TODO: try to establish new session: card insertion/removal */
+        } catch (InvalidCardException ex){
+            /** card removal do nothing */
         }
         return null;
         
@@ -137,6 +139,8 @@ public final class DnieKeyStore extends KeyStoreSpi {
         } catch (DnieDriverException ex){
             
         } catch (DnieDriverPinException ex){
+            
+        } catch (InvalidCardException ex){
             
         }
         
@@ -176,6 +180,8 @@ public final class DnieKeyStore extends KeyStoreSpi {
             } catch (DnieDriverException ex){
                 
             } catch (DnieDriverPinException ex){
+                
+            } catch (InvalidCardException ex){
                 
             }
             
@@ -266,8 +272,12 @@ public final class DnieKeyStore extends KeyStoreSpi {
         Iterator<DnieCard> iterator = currentCards.keySet().iterator();
         while (iterator.hasNext()){
             DnieCard card = iterator.next();
-            if (card.hasSubject(subject)){
-                return currentCards.get(card);                        
+            try {
+                if (card.hasSubject(subject)){
+                    return currentCards.get(card);                        
+                }
+            } catch (InvalidCardException ex){
+                // try next card
             }
         }
         

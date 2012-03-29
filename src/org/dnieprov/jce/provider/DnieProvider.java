@@ -50,6 +50,8 @@ import org.dnieprov.driver.exceptions.DnieDriverException;
  */
 public class DnieProvider extends Provider {
     
+    private static final DnieDriver driver = new DnieDriver();
+    
     private static final String INFO = "DNIe Provider v1.2";
     private static final double VERSION = 1.2;
 
@@ -85,6 +87,11 @@ public class DnieProvider extends Provider {
     
     private void setup(){
         // KeyStore service
+         try {
+            driver.init();
+         } catch (DnieDriverException ex){
+
+         }
         putService(new DnieService(this,KS,DNIE_ALG,"org.dnieprov.jce.provider.DnieKeyStore",s(DNIE_ALG)));
         
         // Signature Service
@@ -95,14 +102,17 @@ public class DnieProvider extends Provider {
         
     }
     private static final class DnieService extends Service {
-         private static final DnieDriver driver = new DnieDriver();
+         //private static final DnieDriver driver = new DnieDriver();
          DnieService(Provider prov,String type,String algorithm,String className,String[] al){
              super(prov, type, algorithm, className,toList(al), null);
+             /*
              try {
                 driver.init();
              } catch (DnieDriverException ex){
                  
              }
+              *
+              */
          }
         private static List<String> toList(String[] aliases) {
             return (aliases == null) ? null : Arrays.asList(aliases);

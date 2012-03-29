@@ -56,12 +56,14 @@ import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CardTerminals;
 import javax.smartcardio.CardTerminals.State;
 import javax.smartcardio.TerminalFactory;
 import org.dnieprov.driver.exceptions.DnieDriverException;
 import org.dnieprov.driver.exceptions.DnieDriverPinException;
 import org.dnieprov.driver.exceptions.ApduErrorException;
 import org.dnieprov.driver.exceptions.DnieUnexpectedException;
+import org.dnieprov.driver.exceptions.InvalidCardException;
 import org.dnieprov.driver.exceptions.NoReadersFoundException;
 import org.dnieprov.driver.exceptions.SecureChannelException;
 import org.dnieprov.driver.utils.DigestInfo;
@@ -75,19 +77,50 @@ import org.dnieprov.driver.utils.DigestInfo;
 
 public final class DnieDriver {
     
-    private final ArrayList<DnieCard> cardList;
+    private final DnieCardList cardList;
     private final boolean need2Verify4Certs;
     private static final String title = "DNIe Java Driver 1.2";
+    private final static TerminalFactory factory = TerminalFactory.getDefault();
+    private volatile EventWaitThread thread = null;
     
     public DnieDriver(){
         /** required for correct auto GET RESPONSE handling */
         System.setProperty("sun.security.smartcardio.t0GetResponse","false");
         /** TODO: CERT reconstrution */
         need2Verify4Certs = Boolean.parseBoolean(System.getProperty("org.dnieprov.need2Verify4Certs","true"));
-        cardList = new ArrayList();
+        cardList = new DnieCardList();
     }
-    
+    private void startThread(){
+        synchronized(this){
+            if (thread == null){
+                thread = new EventWaitThread();
+                thread.start();
+                Runtime.getRuntime().addShutdownHook(new Thread() {
+                    @Override
+                    public void run() {
+                        stopThread();
+                    }
+                });            
+            }
+        }
+        
+    }
+    private void stopThread(){
+        synchronized(this){
+            if (thread != null){
+                thread.requestStop();
+                thread = null;
+            }
+        }
+    }
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        stopThread();
+    }     
     public void init() throws DnieDriverException{
+        startThread();
+        
         try {
             initCards();
         } catch (CardException ex){
@@ -97,12 +130,13 @@ public final class DnieDriver {
         } catch (ApduErrorException ex){
             throw new DnieDriverException(ex);
         }
+        
     }
     
     public Enumeration<DnieCard> getCards(){
-        return Collections.enumeration(cardList);
+        return Collections.enumeration(cardList.arrayListCopy());
     }
-    public Enumeration<X509Certificate> getCerts(DnieSession session) throws DnieDriverException,DnieDriverPinException{
+    public Enumeration<X509Certificate> getCerts(DnieSession session) throws DnieDriverException,DnieDriverPinException,InvalidCardException{
         try {
             if (session.getCard().getCardImpl().isValid()){
                 if (session.getCard().getCardImpl().getSecureChannel() == null){
@@ -143,7 +177,7 @@ public final class DnieDriver {
         session.getCard().getCardImpl().destroySession(session);
     }
     
-    public Enumeration<Key> getKeys(DnieSession session) throws DnieDriverException,DnieDriverPinException{
+    public Enumeration<Key> getKeys(DnieSession session) throws DnieDriverException,DnieDriverPinException,InvalidCardException{
         ArrayList<Key> list = new ArrayList();
         Enumeration<X509Certificate> certs = getCerts(session);
         while(certs.hasMoreElements()){
@@ -151,7 +185,7 @@ public final class DnieDriver {
         }
         return Collections.enumeration(list);
     }
-    private boolean verify(DnieInterface inter) throws DnieUnexpectedException,DnieDriverPinException, CardException, ApduErrorException {
+    private boolean verify(DnieInterface inter) throws DnieUnexpectedException,DnieDriverPinException, CardException, ApduErrorException,InvalidCardException {
         char [] password = null;
         PasswordCallback passCall = null;
         String msg = null;
@@ -187,7 +221,7 @@ public final class DnieDriver {
     }
     public byte[] sign(DnieSession session,String algorithm,
             byte[] digest,X509Certificate cert)throws DnieDriverException,
-            DnieDriverPinException, NoSuchAlgorithmException{
+            DnieDriverPinException, NoSuchAlgorithmException, InvalidCardException{
         try {
             if (session.getCard().getCardImpl().isValid()){
                 if (session.getCard().getCardImpl().getSecureChannel() == null){
@@ -223,15 +257,9 @@ public final class DnieDriver {
     }
     
     
-    private void clearCardList(){
-        for (int i=cardList.size()-1;i>=0;i--){
-            cardList.get(i).getCardImpl().invalidate();
-            cardList.remove(i);
-        }
-    }
     private void initCards() throws CardException,NoReadersFoundException,DnieDriverException,ApduErrorException{
-        clearCardList();
-        TerminalFactory factory = TerminalFactory.getDefault();
+        cardList.clear();
+        //TerminalFactory factory = TerminalFactory.getDefault();
         List<CardTerminal> terminals;
         try {
             terminals = factory.terminals().list(State.CARD_PRESENT);
@@ -252,17 +280,7 @@ public final class DnieDriver {
 
             ATR atr = card.getATR();
             if (DnieInterface.isDNI(atr.getBytes())){
-                ParamReference param = new ParamReference();
-                CardChannel channel = card.getBasicChannel();
-                int apduError = DnieInterface.getChipInfo(channel,param);
-                if (apduError != ApduCommand.SW_OK){
-                    throw new ApduErrorException(apduError);
-                }
-                byte [] serialNumber = (byte []) param.getValue();
-                DnieCardImpl cardImpl = new DnieCardImpl(serialNumber,terminal,channel);
-                DnieInterface inter = new DnieInterface(cardImpl);
-                setInfo(inter, cardImpl);
-                cardList.add(new DnieCard(cardImpl));
+                addCard(terminal,card);
             }
 
         }
@@ -307,7 +325,7 @@ public final class DnieDriver {
         }
         
     }
-    private void setInfo(DnieInterface inter,DnieCardImpl card) throws DnieDriverException{
+    private void setInfo(DnieInterface inter,DnieCardImpl card) throws DnieDriverException,InvalidCardException{
         try {
             ParamReference param = new ParamReference();
             
@@ -331,7 +349,7 @@ public final class DnieDriver {
         }
         
     }
-    private void setCerts(DnieInterface inter,DnieCardImpl card) throws DnieDriverException{
+    private void setCerts(DnieInterface inter,DnieCardImpl card) throws DnieDriverException,InvalidCardException{
         byte [] zlibCert = null;
         byte [] unzCert = null;
         try {
@@ -368,4 +386,104 @@ public final class DnieDriver {
         }
         
     }
+    private void addCard(CardTerminal terminal,Card card) throws CardException,ApduErrorException,DnieDriverException{
+        ParamReference param = new ParamReference();
+        CardChannel channel = card.getBasicChannel();
+        int apduError = DnieInterface.getChipInfo(channel,param);
+        if (apduError != ApduCommand.SW_OK){
+            throw new ApduErrorException(apduError);
+        }
+        byte [] serialNumber = (byte []) param.getValue();
+        DnieCardImpl cardImpl = new DnieCardImpl(serialNumber,terminal,channel);
+        DnieInterface inter = new DnieInterface(cardImpl);
+        try {
+            setInfo(inter, cardImpl);
+            cardList.add(new DnieCard(cardImpl));
+        } catch (InvalidCardException ex){
+            // card not valid
+        }
+        
+    }
+    
+    
+    private class EventWaitThread extends Thread {
+        private volatile boolean stop = false;
+        private List<CardTerminal> list(CardTerminals.State state){
+            List<CardTerminal> terminals;
+            try {
+                terminals = factory.terminals().list(state);
+            } catch (CardException ex){
+                return null;
+            }
+
+            return terminals;
+        }
+        public void requestStop() {
+            stop = true;
+        }        
+
+        @Override
+        public void run() {
+            while (!stop) {
+                try{
+                    List<CardTerminal> terminalList = list(CardTerminals.State.CARD_REMOVAL);
+                    if (terminalList != null){
+                        for (CardTerminal terminal : terminalList) {
+                            Iterator<DnieCard> list = cardList.iterator();
+                            while (list.hasNext()){
+                                DnieCard c = list.next();
+                                if (c.getCardImpl().getCardTerminal().equals(terminal)){
+                                    cardList.remove(c);
+                                    c.getCardImpl().invalidate();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    terminalList = list(CardTerminals.State.CARD_INSERTION);
+                    if (terminalList != null){
+                        for (CardTerminal terminal : terminalList) {
+                            try {
+                                Card card = terminal.connect("T=0");
+                                ATR atr = card.getATR();
+                                if (DnieInterface.isDNI(atr.getBytes())){
+                                    Iterator<DnieCard> list = cardList.iterator();
+                                    while (list.hasNext()){
+                                        DnieCard c = list.next();
+                                        if (c.getCardImpl().getCardTerminal().equals(terminal)){
+                                            cardList.remove(c);
+                                            c.getCardImpl().invalidate();
+                                            break;
+                                        }
+                                    }
+                                    try {
+                                        addCard(terminal, card);
+                                    } catch (Exception ex){
+                                        // try again
+                                        try {
+                                            addCard(terminal, card);
+                                        } catch (Exception ex2){
+                                            ex2.printStackTrace();
+                                        }
+                                    }
+                                }
+                            } catch (CardException ex){
+                                
+                            }
+                        }
+                    }
+                    boolean event = false;
+                    while (!event){
+                        try {
+                            event = factory.terminals().waitForChange(5000);
+                        } catch (CardException ex){
+                            Thread.sleep(5000);
+                        }
+                    }
+                } catch (InterruptedException e){
+                    e.printStackTrace(); 
+                }
+            }
+        }
+    }    
 }
