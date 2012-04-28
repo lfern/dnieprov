@@ -119,7 +119,6 @@ public final class DnieDriver {
         stopThread();
     }     
     public void init() throws DnieDriverException{
-        startThread();
         
         try {
             initCards();
@@ -130,6 +129,7 @@ public final class DnieDriver {
         } catch (ApduErrorException ex){
             throw new DnieDriverException(ex);
         }
+        startThread();
         
     }
     
