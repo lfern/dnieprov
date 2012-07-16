@@ -82,6 +82,8 @@ public final class DnieDriver {
     private static final String title = "DNIe Java Driver 1.2";
     private final static TerminalFactory factory = TerminalFactory.getDefault();
     private volatile EventWaitThread thread = null;
+    private volatile boolean threadReady = false;
+    private final Boolean threadReadyLock = Boolean.FALSE;
     
     public DnieDriver(){
         /** required for correct auto GET RESPONSE handling */
@@ -93,6 +95,7 @@ public final class DnieDriver {
     private void startThread(){
         synchronized(this){
             if (thread == null){
+                threadReady = false;
                 thread = new EventWaitThread();
                 thread.start();
                 Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -101,6 +104,15 @@ public final class DnieDriver {
                         stopThread();
                     }
                 });            
+            }
+        }
+        synchronized(threadReadyLock){
+            while (true){
+                try {
+                    threadReadyLock.wait();
+                    break;
+                } catch (InterruptedException ex){
+                }
             }
         }
         
@@ -119,17 +131,20 @@ public final class DnieDriver {
         stopThread();
     }     
     public void init() throws DnieDriverException{
-        
-        try {
-            initCards();
-        } catch (CardException ex){
-            throw new DnieDriverException(ex);
-        } catch (NoReadersFoundException ex){
-            throw new DnieDriverException(ex);
-        } catch (ApduErrorException ex){
-            throw new DnieDriverException(ex);
-        }
-        startThread();
+        //synchronized(this){
+            if (thread == null) {
+                try {
+                    initCards();
+                } catch (CardException ex){
+                    throw new DnieDriverException(ex);
+                } catch (NoReadersFoundException ex){
+                    throw new DnieDriverException(ex);
+                } catch (ApduErrorException ex){
+                    throw new DnieDriverException(ex);
+                }
+                startThread();
+            }
+        //}
         
     }
     
@@ -470,6 +485,12 @@ public final class DnieDriver {
                             } catch (CardException ex){
                                 
                             }
+                        }
+                    }
+                    if (!threadReady){
+                        synchronized(threadReadyLock){
+                            threadReady = true;
+                            threadReadyLock.notify();
                         }
                     }
                     boolean event = false;
