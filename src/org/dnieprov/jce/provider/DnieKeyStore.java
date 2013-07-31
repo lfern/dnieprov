@@ -50,8 +50,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import org.dnieprov.driver.DnieCard;
 import org.dnieprov.driver.DnieDriver;
 import org.dnieprov.driver.DniePrivateKey;
@@ -68,7 +68,8 @@ import org.dnieprov.driver.exceptions.InvalidCardException;
 public final class DnieKeyStore extends KeyStoreSpi {
     
     private final DnieDriver driver;
-    private Hashtable<DnieCard,DnieSession> currentCards = new Hashtable();
+    //private Hashtable<DnieCard,DnieSession> currentCards = new Hashtable();
+    private ConcurrentHashMap <DnieCard,DnieSession> currentCards = new ConcurrentHashMap();
     
     static final int NULL           = 0;
     static final int CERTIFICATE    = 1;
