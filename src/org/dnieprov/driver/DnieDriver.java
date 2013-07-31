@@ -96,7 +96,12 @@ public final class DnieDriver {
         synchronized(this){
             if (thread == null){
                 threadReady = false;
-                thread = new EventWaitThread();
+                String os = System.getProperty("os.name").toLowerCase();
+                if (os.indexOf("win") >= 0){
+                    thread = new EventWaitThreadWindows();
+                } else {
+                    thread = new EventWaitThreadLinux();
+                }
                 thread.start();
                 Runtime.getRuntime().addShutdownHook(new Thread() {
                     @Override
@@ -182,6 +187,10 @@ public final class DnieDriver {
             throw new DnieDriverException(ex);
         } catch (ApduErrorException ex){
             throw new DnieDriverException(ex);
+        } catch (IllegalStateException ex){
+            ex.printStackTrace();
+            cardList.remove(session.getCard());
+            return null;
         }
     }
     
@@ -195,6 +204,7 @@ public final class DnieDriver {
     public Enumeration<Key> getKeys(DnieSession session) throws DnieDriverException,DnieDriverPinException,InvalidCardException{
         ArrayList<Key> list = new ArrayList();
         Enumeration<X509Certificate> certs = getCerts(session);
+        if (certs == null) return null;
         while(certs.hasMoreElements()){
             list.add(new DniePrivateKey(session, certs.nextElement()));
         }
@@ -421,8 +431,14 @@ public final class DnieDriver {
     }
     
     
-    private class EventWaitThread extends Thread {
-        private volatile boolean stop = false;
+    private abstract class EventWaitThread extends Thread {
+        protected volatile boolean stop = false;
+        public void requestStop() {
+            stop = true;
+        } 
+    }
+    
+    private class EventWaitThreadWindows extends EventWaitThread {
         private List<CardTerminal> list(CardTerminals.State state){
             List<CardTerminal> terminals;
             try {
@@ -433,9 +449,6 @@ public final class DnieDriver {
 
             return terminals;
         }
-        public void requestStop() {
-            stop = true;
-        }        
 
         @Override
         public void run() {
@@ -507,4 +520,87 @@ public final class DnieDriver {
             }
         }
     }    
+    
+    
+    
+    
+    
+   private class EventWaitThreadLinux extends EventWaitThread {
+        private List<CardTerminal> list(CardTerminals.State state){
+            List<CardTerminal> terminals;
+            try {
+                terminals = factory.terminals().list(state);
+            } catch (CardException ex){
+                return null;
+            }
+
+            return terminals;
+        }
+
+        @Override
+        public void run() {
+            while (!stop) {
+                try {
+                    List<CardTerminal> terminalList = factory.terminals().list();
+                    for (CardTerminal terminal : terminalList) {
+                        try {
+                            if (!terminal.isCardPresent()){
+                                Iterator<DnieCard> list = cardList.iterator();
+                                while (list.hasNext()){
+                                    DnieCard c = list.next();
+                                    if (c.getCardImpl().getCardTerminal().equals(terminal)){
+                                        cardList.remove(c);
+                                        c.getCardImpl().invalidate();
+                                        break;
+                                    }
+                                }                        
+                            } else if (terminal.isCardPresent()){
+                                Iterator<DnieCard> list = cardList.iterator();
+                                boolean found = false;
+                                while (list.hasNext()){
+                                    DnieCard c = list.next();
+                                    if (c.getCardImpl().getCardTerminal().equals(terminal)){
+                                        found = true;
+                                        break;
+                                    }
+                                }                    
+                                if (!found){
+                                    Card card = terminal.connect("T=0");
+                                    ATR atr = card.getATR();
+                                    if (DnieInterface.isDNI(atr.getBytes())){                            
+                                        try {
+                                            addCard(terminal, card);
+                                        } catch (Exception ex){
+                                            // try again
+                                            try {
+                                                addCard(terminal, card);
+                                            } catch (Exception ex2){
+                                                ex2.printStackTrace();
+                                            }
+                                        }                            
+                                    }
+                                }
+                            }
+                        } catch (CardException ex ){
+                            
+                        }
+                    }
+                } catch (CardException ex){
+                    
+                }
+                if (!threadReady){
+                    synchronized(threadReadyLock){
+                        threadReady = true;
+                        threadReadyLock.notify();
+                    }
+                }
+                
+                try {
+                    Thread.sleep(5000);                    
+                } catch (InterruptedException e){
+                    e.printStackTrace(); 
+                }
+            }
+        }
+    }      
 }
