@@ -36,15 +36,15 @@
 package org.dnieprov.driver;
 
 import java.math.BigInteger;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**
  * Private Key representation for DNIe cert.
  * @author luis
  */
-public class DniePrivateKey implements RSAPrivateKey{
+public class DniePrivateKey implements PrivateKey{//RSAPrivateKey{
     private final X509Certificate cert;
     private final DnieSession session;
 
@@ -54,12 +54,12 @@ public class DniePrivateKey implements RSAPrivateKey{
         this.session = session;
     }
 
-    @Override
+    //@Override
     public BigInteger getModulus() {
         return ((RSAPublicKey)cert.getPublicKey()).getModulus();
     }
 
-    @Override
+    //@Override
     public BigInteger getPrivateExponent() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

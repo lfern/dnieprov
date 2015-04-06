@@ -125,6 +125,10 @@ public final class DnieKeyStore extends KeyStoreSpi {
 
     @Override
     public Certificate engineGetCertificate(String alias) {
+        
+        if (alias.startsWith(KEY_ALIAS_PREFIX)){
+            alias = alias.replaceFirst(KEY_ALIAS_PREFIX, "");
+        }
         try {
             updateCards();
             DnieSession session = getDnieSession4SubjectDN(alias);

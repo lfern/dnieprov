@@ -70,6 +70,8 @@ public class DnieProvider extends Provider {
     private static final String SHA384_RSA_ALIAS = "SHA384withRSA";
     private static final String SHA512_RSA_ALIAS = "SHA512withRSA";
     
+    private static final String NONE_RSA = "NONEwithRSA";
+    
     
     public DnieProvider()  {
         super(PROVIDER_NAME, VERSION, INFO);
@@ -95,6 +97,7 @@ public class DnieProvider extends Provider {
         putService(new DnieService(this,KS,DNIE_ALG,"org.dnieprov.jce.provider.DnieKeyStore",s(DNIE_ALG)));
         
         // Signature Service
+        putService(new DnieService(this,SIG,NONE_RSA,"org.dnieprov.jce.provider.DnieDigestSignature$SHA1WithRSAEncryption",s(NONE_RSA)));
         putService(new DnieService(this,SIG,SHA1_RSA,"org.dnieprov.jce.provider.DnieDigestSignature$SHA1WithRSAEncryption",s(SHA1_RSA)));
         putService(new DnieService(this,SIG,SHA256_RSA,"org.dnieprov.jce.provider.DnieDigestSignature$SHA256WithRSAEncryption",s(SHA256_RSA_ALIAS)));
         putService(new DnieService(this,SIG,SHA384_RSA,"org.dnieprov.jce.provider.DnieDigestSignature$SHA384WithRSAEncryption",s(SHA384_RSA_ALIAS)));
@@ -136,6 +139,8 @@ public class DnieProvider extends Provider {
                     return new DnieSignature.SHA384WithRSAEncryption(driver);
                 } else if (algorithm.equals(SHA512_RSA)){
                     return new DnieSignature.SHA512WithRSAEncryption(driver);
+                } else if (algorithm.equals(NONE_RSA)){
+                    return new DnieSignature.NoneWithRSAEncryption(driver);
                 } else {
                     throw new NoSuchAlgorithmException("Unknown algorithm: " + algorithm);
                 }

@@ -46,6 +46,7 @@ import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Enumeration;
 import org.dnieprov.crypto.Digest;
+import org.dnieprov.crypto.digests.NoneDigest;
 import org.dnieprov.crypto.digests.SHA1Digest;
 import org.dnieprov.crypto.digests.SHA256Digest;
 import org.dnieprov.crypto.digests.SHA384Digest;
@@ -206,5 +207,14 @@ public class DnieSignature extends SignatureSpi {
             super(driver,new SHA512Digest());
         }
     }    
+    
+    static public class NoneWithRSAEncryption
+        extends DnieSignature
+    {
+        public NoneWithRSAEncryption(DnieDriver driver)
+        {
+            super(driver,new NoneDigest());
+        }
+    }  
     
 }

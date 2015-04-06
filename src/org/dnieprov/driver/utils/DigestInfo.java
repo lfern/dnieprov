@@ -40,6 +40,7 @@ import org.dnieprov.driver.utils.bertlv.BerTlvIdentifier;
 import org.dnieprov.driver.utils.bertlv.BerType;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import sun.security.x509.AlgorithmId;
 
 /**
@@ -53,6 +54,10 @@ public class DigestInfo {
         algId.setTag(new BerTlvIdentifier(BerType.SEQUENCE));
         algId.setValue(AlgorithmId.get(digestAlgorithm).encode());
         */
+        
+        if (digestAlgorithm.equals("NONE")){
+            return digest;
+        }
         BerTlv dig = new BerTlv();
         dig.setTag(new BerTlvIdentifier(BerType.OCTET_STRING));
         dig.setValue(digest);
